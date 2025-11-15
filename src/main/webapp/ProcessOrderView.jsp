@@ -108,17 +108,11 @@
 <div class="section">
     <h3>🚚 Assign Delivery Staff</h3>
 
-    <form action="DeliverStaffServlet" method="get">
-        <input type="hidden" name="orderId" value="<%= order.getId() %>">
-        <input type="hidden" name="customerName" value="<%= order.getCustomer().getFullname() %>">
-        <input type="hidden" name="deliveryAddress" value="<%= order.getDeliveryAddress() %>">
-        <input type="hidden" name="totalAmount" value="<%= order.getTotalAmount() %>">
+  <a href="OnlineOrderServlet?action=assignStaff&id=<%= order.getId() %>" class="btn"
+    <%= hasInsufficientStock ? "style='pointer-events:none;opacity:0.6;'" : "" %>>
+    Assign Delivery Staff →
+</a>
 
-        <button type="submit" class="btn"
-            <%= hasInsufficientStock ? "disabled title='Cannot assign staff — not enough stock!'" : "" %>>
-            Assign Delivery Staff →
-        </button>
-    </form>
 
     <% if (hasInsufficientStock) { %>
         <p style="color: red; font-weight: bold; margin-top: 10px;">
