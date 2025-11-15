@@ -44,8 +44,8 @@ public class OnlineOrderServlet extends HttpServlet {
                 showOrderDetail(request, response);
                 break;
             case "assignStaff": 
-                forwardToAssignStaff(request, response);
-                break;
+                 response.sendRedirect(request.getContextPath() + "/DeliverStaffServlet");
+    break;
             default:
                 listOrders(request, response);
                 break;
@@ -61,71 +61,60 @@ public class OnlineOrderServlet extends HttpServlet {
     }
 
     // 2️⃣ Show details
-    private void showOrderDetail(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        int orderId = Integer.parseInt(request.getParameter("id"));
-        OnlineOrder order = orderDAO.getOrderById(orderId);
-        request.setAttribute("order", order);
-        request.getRequestDispatcher("ProcessOrderView.jsp").forward(request, response);
-    }
+   private void showOrderDetail(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    int orderId = Integer.parseInt(request.getParameter("id"));
+    OnlineOrder order = orderDAO.getOrderById(orderId);
+    
+    // store in session so DeliverStaffServlet can access it
+    HttpSession session = request.getSession();
+    session.setAttribute("currentOrder", order);
+    
+    request.setAttribute("order", order);
+    request.getRequestDispatcher("ProcessOrderView.jsp").forward(request, response);
+}
 
-    // 3️⃣ Forward full order to DeliverStaffServlet
-    private void forwardToAssignStaff(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    
+   
 
-        int orderId = Integer.parseInt(request.getParameter("id"));
-        OnlineOrder order = orderDAO.getOrderById(orderId); // get full order (includes customer etc.)
 
-        request.setAttribute("order", order);
-        request.getRequestDispatcher("DeliverStaffServlet").forward(request, response); // 👈 forward object directly
-    }
-
-    // 4️⃣ Confirm page
+ 
 
     // 5️⃣ Save to DB
 private void saveOrder(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
 
-    OnlineOrderDAO orderDAO = new OnlineOrderDAO();
-    DeliveryStaffDAO staffDAO = new DeliveryStaffDAO(); // DAO to fetch full DeliveryStaff
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+        response.sendRedirect(request.getContextPath() + "/OnlineOrderServlet?action=list");
+        return;
+    }
+
+    OnlineOrder order = (OnlineOrder) session.getAttribute("currentOrder");
+    if (order == null) {
+        response.sendRedirect(request.getContextPath() + "/OnlineOrderServlet?action=list");
+        return;
+    }
+
     try {
-        int orderId = Integer.parseInt(request.getParameter("orderId"));
-        int staffId = Integer.parseInt(request.getParameter("staffId"));
-
-        // 1️⃣ Fetch full order
-        OnlineOrder order = orderDAO.getOrderById(orderId);
-        if (order == null) throw new Exception("Order not found");
-
-        // 2️⃣ Fetch full DeliveryStaff from DB
-        DeliveryStaff deliverStaff = staffDAO.getDeliveryStaffById(staffId);
-        if (deliverStaff == null) throw new Exception("Delivery staff not found");
-
-        // 3️⃣ Set order fields
-        order.setStatus("Processed");
-        order.setDeliverStaff(deliverStaff);
-
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            Object user = session.getAttribute("user");
-            if (user instanceof WareHouseStaff) {
-                order.setWareHouseStaff((WareHouseStaff) user);
-            }
-        }
-
-        // 4️⃣ Save to DB
+        // save to DB
         boolean saved = orderDAO.editOrder(order);
         if (!saved) throw new Exception("Failed to save order");
 
-        // 5️⃣ Forward to JSP with full objects for printing
         request.setAttribute("order", order);
-        request.setAttribute("action", "save"); // trigger print in JSP
+        request.setAttribute("action", "save");
         request.getRequestDispatcher("ConfirmView.jsp").forward(request, response);
+
+        // remove from session after save
+        session.removeAttribute("currentOrder");
 
     } catch (Exception e) {
         request.setAttribute("errorMessage", e.getMessage());
         request.getRequestDispatcher("ConfirmView.jsp").forward(request, response);
     }
 }
+
+
 
 
     
