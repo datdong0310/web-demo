@@ -35,26 +35,6 @@
         .cancel { background-color: #f44336; color: white; border: none; }
         .error-box { color: red; border:1px solid red; padding:10px; margin:15px 0; }
     </style>
-    <script>
-        function saveAndPrint() {
-            const form = document.getElementById("saveForm");
-
-            // Log in browser console (optional)
-            console.log("Submitting orderId=" + form.orderId.value + ", staffId=" + form.staffId.value);
-
-            // Submit normally to servlet
-            form.submit();
-
-            // Print after short delay to allow servlet to process
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        }
-
-        function cancelAction() {
-            window.history.back();
-        }
-    </script>
 </head>
 <body>
 
@@ -129,11 +109,27 @@
         <input type="hidden" name="orderId" value="<%= order.getId() %>">
         <input type="hidden" name="staffId" value="<%= order.getDeliverStaff() != null ? order.getDeliverStaff().getId() : "" %>">
 
-        <button type="button" class="save-print" onclick="saveAndPrint()">💾 Save & Print</button>
-        <button type="button" class="cancel" onclick="cancelAction()">❌ Cancel</button>
+        <button type="submit" class="save-print">💾 Save & Print</button>
+        <button type="button" class="cancel" onclick="window.history.back()">❌ Cancel</button>
     </form>
 </div>
 
+<%-- Auto-print only after save action --%>
+<% if ("save".equals(request.getParameter("action"))) { %>
+<script>
+    window.onload = function() {
+        // Trigger print
+        window.print();
+
+        // After print dialog is closed (either Print or Cancel), go back to order list
+        window.onafterprint = function() {
+            window.location.href = "<%= request.getContextPath() %>/OnlineOrderServlet?action=list";
+        };
+    };
+</script>
+<% } %>
+
 <% } %>
 </body>
+
 </html>
