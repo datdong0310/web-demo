@@ -35,9 +35,10 @@ public class DeliverStaffServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // ✅ Get order from previous servlet
         OnlineOrder order = (OnlineOrder) request.getAttribute("order");
 
-       
+        // Fallback: if only orderId passed, reload from DB
         if (order == null && request.getParameter("orderId") != null) {
             int orderId = Integer.parseInt(request.getParameter("orderId"));
             order = new OnlineOrderDAO().getOrderById(orderId);
@@ -57,7 +58,7 @@ public class DeliverStaffServlet extends HttpServlet {
         int staffId = Integer.parseInt(request.getParameter("staffId"));
         int orderId = Integer.parseInt(request.getParameter("orderId"));
 
-      
+        // Load full objects
         OnlineOrderDAO orderDAO = new OnlineOrderDAO();
         DeliveryStaffDAO staffDAO = new DeliveryStaffDAO();
 
@@ -76,7 +77,7 @@ public class DeliverStaffServlet extends HttpServlet {
         order.setProcessDate(new java.sql.Date(System.currentTimeMillis()));
         order.setStatus("Processed");
 
-      
+        // ✅ Instead of returning to ProcessOrderView.jsp → go to ConfirmAssignView.jsp
         request.setAttribute("order", order);
         request.setAttribute("staff", chosen);
         request.getRequestDispatcher("ConfirmView.jsp").forward(request, response);
